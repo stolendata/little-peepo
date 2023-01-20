@@ -52,6 +52,7 @@ while ( 1 )
         $certs = do CERTS_FILE;
         my ( $domains, $accounts ) = ( scalar keys %$certs, 0 );
         $accounts += scalar keys %{$peepos->{$_}} for keys %$certs;
+        die 'no domains/accounts configured' if ( !$domains or !$accounts );
         blog( "serving $accounts accounts in $domains domains" );
     }
 
