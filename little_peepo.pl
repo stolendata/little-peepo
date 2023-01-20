@@ -28,14 +28,11 @@ use constant SSL_TLS_VERSIONS=>'!SSLv23:!SSLv2:!SSLv3:!TLSv1:!TLSv11';
 use constant LISTEN_IP=>'0.0.0.0';
 use constant LISTEN_PORT=>995;
 use constant ACCOUNTS_FILE=>'./peepos.conf'; # here be POP3 accounts/passwords
+use constant CERTS_FILE=>'./domains_certs.conf'; # and here be domain/cert map
+use constant MAILDIR=>'/var/mail/{U}'; # {U} expands to account's local user
 
-# {U} expands to the local username of the account
-use constant MAILDIR=>'/var/mail/{U}';
-
-# domains served: 'domain.name'=>'full-chain-and-privkey.pem'
-use constant DOMAINS=>{ 'some.domain.name'=>'./peepo.pem' };
-
-my ( $master, $peepos, $reload, $clients, $errs ) = ( $$, undef, 1, 0, 0 );
+my ( $master, $peepos, $certs ) = ( $$, undef, undef );
+my ( $reload, $clients, $errs ) = ( 1, 0, 0 );
 
 $SIG{HUP} = sub { $reload = 1; };
 $SIG{CHLD} = sub { wait; $clients--; };
@@ -52,8 +49,9 @@ while ( 1 )
     {
         $reload = 0;
         $peepos = do ACCOUNTS_FILE;
-        my ( $domains, $accounts ) = ( scalar keys %{DOMAINS()}, 0 );
-        $accounts += scalar keys %{$peepos->{$_}} for keys %{DOMAINS()};
+        $certs = do CERTS_FILE;
+        my ( $domains, $accounts ) = ( scalar keys %$certs, 0 );
+        $accounts += scalar keys %{$peepos->{$_}} for keys %$certs;
         blog( "serving $accounts accounts in $domains domains" );
     }
 
@@ -75,7 +73,7 @@ while ( 1 )
 
     IO::Socket::SSL->start_SSL( $c, Timeout=>5, SSL_server=>1,
                                 SSL_version=>SSL_TLS_VERSIONS,
-                                SSL_cert_file=>DOMAINS );
+                                SSL_cert_file=>$certs );
 
     if ( $SSL_ERROR )
     {
