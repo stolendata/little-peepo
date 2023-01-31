@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# little peepo v0.1 - https://github.com/stolendata/little-peepo
+# little peepo v0.2 - https://github.com/stolendata/little-peepo
 #
 # (c) 2009 robin leffmann <djinn at stolendata dot net>
 #
@@ -149,7 +149,7 @@ while ( 1 )
         elsif ( $cmd eq 'CAPA' )
         {
             print $c "+OK little peepo spellbook\r\n";
-            print $c "$_\r\n" for ( 'IMPLEMENTATION little-peepo-v0.1',
+            print $c "$_\r\n" for ( 'IMPLEMENTATION little-peepo-v0.2',
                                     'LOGIN-DELAY 120', 'EXPIRE 0',
                                     'USER', 'UIDL', 'TOP', '.' );
         }
