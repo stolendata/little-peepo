@@ -134,6 +134,7 @@ while ( 1 )
         my @p = split( /\s+/, $buf );
         my $cmd = uc ( $p[0] // '' );
 
+        $buf = 'PASS *' if $cmd eq 'PASS';
         blog( "DEBUG \"$buf\"" ) if DEBUG;
 
         $cmd_count++ if length $cmd;
