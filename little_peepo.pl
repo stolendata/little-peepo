@@ -16,6 +16,7 @@ use strict;
 use warnings;
 
 use Digest::MD5 'md5_hex';
+use Digest::SHA 'sha256_base64';
 use File::Basename 'basename';
 use IO::Socket::SSL;
 
@@ -156,9 +157,12 @@ while ( 1 )
         {
             if ( $cmd eq 'APOP' and length $p[1] and length $p[2] )
             {
-                my $hash = defined $peepos->{$domain}{$p[1]}
-                           ? md5_hex( $banner . $peepos->{$domain}{$p[1]}[0] )
-                           : '';
+                my $hash = '';
+                if ( defined $peepos->{$domain}{$p[1]}
+                     and $peepos->{$domain}{$p[1]}[0] =~ /^apop:(.+)/ )
+                {
+                    $hash = md5_hex( $banner . $1 );
+                }
 
                 if ( $p[2] eq $hash )
                 {
@@ -178,8 +182,11 @@ while ( 1 )
             }
             elsif ( $cmd eq 'PASS' and length $p[1] and length $account )
             {
+                my $hash = sha256_base64( $account . $p[1] );
+                $hash .= '=' while ( length $hash ) % 4;
+
                 if ( defined $peepos->{$domain}{$account}
-                     and $p[1] eq $peepos->{$domain}{$account}[0] )
+                     and "pass:$hash" eq $peepos->{$domain}{$account}[0] )
                 {
                     $user = $peepos->{$domain}{$account}[1];
                     $txphase = 1;
