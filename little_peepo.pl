@@ -288,7 +288,7 @@ while ( 1 )
             my $file = $mailbox->{msgs}{$num}{file};
             my $mail = "From: little peepo\r\nTo: you\r\n\r\nmail fail ;(";
             open( my $fh, '<', "./new/$file" );
-            { local $/; $mail = <$fh>; };
+            { binmode( $fh ); local $/; $mail = <$fh>; };
             close( $fh );
 
             print $c "+OK $mailbox->{msgs}{$num}{bytes} bytes\r\n";
