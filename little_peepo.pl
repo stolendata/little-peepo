@@ -291,14 +291,16 @@ while ( 1 )
             { binmode( $fh ); local $/; $mail = <$fh>; };
             close( $fh );
 
-            print $c "+OK $mailbox->{msgs}{$num}{bytes} bytes\r\n";
-            print $c $mail;
-            print $c "\r\n.\r\n";
+            my $ok = print $c "+OK $mailbox->{msgs}{$num}{bytes} bytes\r\n"
+                              . "$mail\r\n.\r\n";
 
-            my $newfile = $file =~ /:2,$/ ? "${file}S" : "$file:2,S";
-            $mailbox->{msgs}{$num}{file} = $newfile;
-            blog( "RETR $file -> $newfile" );
-            rename( "./new/$file", "./cur/$newfile" );
+            if ( $ok )
+            {
+                my $newfile = $file =~ /:2,$/ ? "${file}S" : "$file:2,S";
+                $mailbox->{msgs}{$num}{file} = $newfile;
+                blog( "RETR $file -> $newfile" );
+                rename( "./new/$file", "./cur/$newfile" );
+            }
         }
         elsif ( $cmd eq 'DELE' and length $p[1] )
         {
