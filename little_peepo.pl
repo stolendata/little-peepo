@@ -287,7 +287,7 @@ while ( 1 )
 
             my $file = $mailbox->{msgs}{$num}{file};
             my $mail = "From: little peepo\r\nTo: you\r\n\r\nmail fail ;(";
-            open( my $fh, '<', "./new/$file" );
+            open( my $fh, '<', "/new/$file" );
             { binmode( $fh ); local $/; $mail = <$fh>; };
             close( $fh );
 
@@ -299,7 +299,7 @@ while ( 1 )
                 my $newfile = $file =~ /:2,$/ ? "${file}S" : "$file:2,S";
                 $mailbox->{msgs}{$num}{file} = $newfile;
                 blog( "RETR $file -> $newfile" );
-                rename( "./new/$file", "./cur/$newfile" );
+                rename( "/new/$file", "/cur/$newfile" );
             }
         }
         elsif ( $cmd eq 'DELE' and length $p[1] )
@@ -315,7 +315,7 @@ while ( 1 )
             my $file = $mailbox->{msgs}{$num}{file};
             my $newfile = $file =~ s/(?::2,[^T]?)?$/:2,T/r;
             blog( "DELE $file -> $newfile" );
-            rename( "./cur/$file", "./cur/$newfile" );
+            rename( "/cur/$file", "/cur/$newfile" );
 
             print $c "+OK poof\r\n";
         }
@@ -356,7 +356,7 @@ sub tally_mailbox
     undef $mailbox->{msgs};
     $mailbox->{count} = $mailbox->{bytes} = 0;
 
-    for ( glob('./new/*') )
+    for ( glob('/new/*') )
     {
         next unless ( -f $_ and -r $_ and $_ !~ /:2,.$/ and (my $fs = -s $_) );
 
