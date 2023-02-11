@@ -297,9 +297,9 @@ while ( 1 )
             if ( $ok )
             {
                 my $newfile = $file =~ /:2,$/ ? "${file}S" : "$file:2,S";
-                $mailbox->{msgs}{$num}{file} = $newfile;
                 $ok = rename( "/new/$file", "/cur/$newfile" );
                 blog( "RETR $file -> $newfile" ) if $ok;
+                $mailbox->{msgs}{$num}{file} = $newfile if $ok;
             }
         }
         elsif ( $cmd eq 'DELE' and length $p[1] )
