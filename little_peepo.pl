@@ -298,8 +298,8 @@ while ( 1 )
             {
                 my $newfile = $file =~ /:2,$/ ? "${file}S" : "$file:2,S";
                 $mailbox->{msgs}{$num}{file} = $newfile;
-                blog( "RETR $file -> $newfile" );
-                rename( "/new/$file", "/cur/$newfile" );
+                $ok = rename( "/new/$file", "/cur/$newfile" );
+                blog( "RETR $file -> $newfile" ) if $ok;
             }
         }
         elsif ( $cmd eq 'DELE' and length $p[1] )
@@ -314,8 +314,8 @@ while ( 1 )
 
             my $file = $mailbox->{msgs}{$num}{file};
             my $newfile = $file =~ s/(?::2,[^T]?)?$/:2,T/r;
-            blog( "DELE $file -> $newfile" );
-            rename( "/cur/$file", "/cur/$newfile" );
+            my $ok = rename( "/cur/$file", "/cur/$newfile" );
+            blog( "DELE $file -> $newfile" ) if $ok;
 
             print $c "+OK poof\r\n";
         }
