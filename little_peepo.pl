@@ -25,6 +25,7 @@ use constant MAX_CLIENTS=>5;
 use constant AUTH_GRACE_SEC=>5;
 use constant CLIENT_TIMEOUT_SEC=>10;
 use constant ERRS_BEFORE_KICK=>10;
+use constant EMPTY_TRASH=>1;
 use constant SSL_TLS_VERSIONS=>'!SSLv23:!SSLv2:!SSLv3:!TLSv1:!TLSv11';
 use constant LISTEN_IP=>'0.0.0.0';
 use constant LISTEN_PORT=>995;
@@ -85,7 +86,7 @@ while ( 1 )
     }
 
     my ( $conn_start, $txphase, $mailbox, $maildir ) = ( time, 0, {}, undef );
-    my ( $account, $user, $cmd_count ) = ( undef, undef, 0 );
+    my ( $account, $user, $cmd_count, @dele ) = ( undef, undef, 0, () );
 
     # APOP auth banner
     srand();
@@ -312,10 +313,16 @@ while ( 1 )
             my $newfile = $file =~ s/(?::2,[^T]?)?$/:2,T/r;
             my $ok = rename( "/cur/$file", "/cur/$newfile" );
             blog( "DELE $file -> $newfile" ) if $ok;
+            push( @dele, $newfile ) if $ok;
 
             print $c "+OK poof\r\n";
         }
-        elsif ( $cmd eq 'NOOP' or $cmd eq 'RSET' )
+        elsif ( $cmd eq 'RSET' )
+        {
+            @dele = ();
+            print $c "+OK\r\n";
+        }
+        elsif ( $cmd eq 'NOOP' )
         {
             print $c "+OK\r\n";
         }
@@ -323,6 +330,11 @@ while ( 1 )
         {
             err( $c, 'uhh' );
         }
+    }
+
+    if ( EMPTY_TRASH )
+    {
+        unlink "/cur/$_" and blog( "purged $_" ) for @dele;
     }
 
     $c->close;
