@@ -131,9 +131,11 @@ while ( 1 )
 
         # auth phase
 
-        $buf =~ s/(\r?\n.*|[^a-z0-9 @._-]|^\s+|\s+$)//gi;
+        $buf =~ tr/a-zA-Z0-9 @._-//cd;
+        $buf =~ s/^\s+|\s+$//g;
         my @p = split( /\s+/, $buf );
         my $cmd = uc ( $p[0] // '' );
+        my $num = length $p[1] ? ( $p[1] =~ tr/0-9//cdr || 0 ) : ''; # hazy...
 
         $buf = 'PASS *' if $cmd eq 'PASS';
         blog( "DEBUG \"$buf\"" ) if DEBUG;
@@ -255,8 +257,6 @@ while ( 1 )
 
             if ( length $p[1] )
             {
-                my $num = $p[1] =~ tr/0-9//cdr || 0; # YES, THANK YOU, I KNOW
-
                 if ( defined $mailbox->{msgs}{$num} )
                 {
                     my $field = $cmd eq 'LIST' ? 'bytes' : 'uid';
@@ -277,8 +277,6 @@ while ( 1 )
         }
         elsif ( $cmd eq 'RETR' and length $p[1] )
         {
-            my $num = $p[1] =~ tr/0-9//cdr || 0;
-
             if ( !defined $mailbox->{msgs}{$num} )
             {
                 err( $c, 'no such message' );
@@ -304,8 +302,6 @@ while ( 1 )
         }
         elsif ( $cmd eq 'DELE' and length $p[1] )
         {
-            my $num = $p[1] =~ tr/0-9//cdr || 0;
-
             if ( !defined $mailbox->{msgs}{$num} )
             {
                 err( $c, 'no such message' );
@@ -360,7 +356,7 @@ sub tally_mailbox
     {
         next unless ( -f $_ and -r $_ and $_ !~ /:2,.$/ and (my $fs = -s $_) );
 
-        $domain =~ s/[.]/-/g;
+        $domain =~ tr/./-/;
         my $file = basename( $_ );
         my ( $uid_domain ) = $file =~ /^.+?[.].+?[.]([^,]+),?/;
         my $uid = $file =~ s/$uid_domain.*$/$domain/r;
