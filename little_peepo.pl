@@ -137,6 +137,7 @@ while ( 1 )
         my @p = split( /\s+/, $buf );
         my $cmd = uc ( $p[0] // '' );
         my $num = length $p[1] ? ( $p[1] =~ tr/0-9//cdr || 0 ) : ''; # hazy...
+        my $opt = length $p[2] ? ( $p[2] =~ tr/0-9//cdr || 0 ) : '';
 
         $buf = 'PASS *' if $cmd eq 'PASS';
         blog( "DEBUG \"$buf\"" ) if DEBUG;
@@ -275,6 +276,21 @@ while ( 1 )
                 print $c "$_ $mailbox->{msgs}{$_}{$field}\r\n" for 1..$count;
                 print $c ".\r\n";
             }
+        }
+        elsif ( $cmd eq 'TOP' and length $num and length $opt )
+        {
+            err( $c, 'not found' ), next if !defined $mailbox->{msgs}{$num};
+
+            print $c "+OK only $opt lines\r\n";
+            open( my $fh, '<', '/new/' . $mailbox->{msgs}{$num}{file} );
+            binmode( $fh );
+            while ( $opt >= 0 and my $line = <$fh> )
+            {
+                print $c $line;
+                $opt-- if $line =~ /^\r?\n$/;
+            }
+            close( $fh );
+            print $c "\r\n.\r\n";
         }
         elsif ( $cmd eq 'RETR' and length $p[1] )
         {
