@@ -259,15 +259,10 @@ while ( 1 )
 
             if ( length $p[1] )
             {
-                if ( defined $mailbox->{msgs}{$num} )
-                {
-                    my $field = $cmd eq 'LIST' ? 'bytes' : 'uid';
-                    print $c "+OK $num $mailbox->{msgs}{$num}{$field}\r\n";
-                }
-                else
-                {
-                    err( $c, 'no such message' );
-                }
+                err( $c, 'nothing' ), next if !defined $mailbox->{msgs}{$num};
+
+                my $field = $cmd eq 'LIST' ? 'bytes' : 'uid';
+                print $c "+OK $num $mailbox->{msgs}{$num}{$field}\r\n";
             }
             else
             {
@@ -279,7 +274,7 @@ while ( 1 )
         }
         elsif ( $cmd eq 'TOP' and length $num and length $opt )
         {
-            err( $c, 'not found' ), next if !defined $mailbox->{msgs}{$num};
+            err( $c, 'nothing' ), next if !defined $mailbox->{msgs}{$num};
 
             print $c "+OK only $opt lines\r\n";
             open( my $fh, '<', '/new/' . $mailbox->{msgs}{$num}{file} );
@@ -294,11 +289,7 @@ while ( 1 )
         }
         elsif ( $cmd eq 'RETR' and length $p[1] )
         {
-            if ( !defined $mailbox->{msgs}{$num} )
-            {
-                err( $c, 'no such message' );
-                next;
-            }
+            err( $c, 'nothing' ), next if !defined $mailbox->{msgs}{$num};
 
             my $file = $mailbox->{msgs}{$num}{file};
             my $mail = "From: little peepo\r\nTo: you\r\n\r\nmail fail ;(";
@@ -319,11 +310,7 @@ while ( 1 )
         }
         elsif ( $cmd eq 'DELE' and length $p[1] )
         {
-            if ( !defined $mailbox->{msgs}{$num} )
-            {
-                err( $c, 'no such message' );
-                next;
-            }
+            err( $c, 'nothing' ), next if !defined $mailbox->{msgs}{$num};
 
             my $file = $mailbox->{msgs}{$num}{file};
             my $newfile = $file =~ s/(?::2,[^T]?)?$/:2,T/r;
@@ -344,7 +331,7 @@ while ( 1 )
         }
         else
         {
-            err( $c, 'uhh' );
+            err( $c, 'not recognized' );
         }
     }
 
