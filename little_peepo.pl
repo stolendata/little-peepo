@@ -85,7 +85,7 @@ while ( 1 )
         exit;
     }
 
-    my ( $conn_start, $txphase, $mailbox, $maildir ) = ( time, 0, {}, undef );
+    my ( $conn_start, $txphase, $maildir, %maildrop ) = ( time, 0, undef, () );
     my ( $account, $user, $cmd_count, @dele ) = ( undef, undef, 0, () );
 
     # APOP auth banner
@@ -224,15 +224,15 @@ while ( 1 )
                 # jailing and/or privilege drop failed
                 if ( $! or !$j or $> != $uid or ($) =~ /(^\d+)/)[0] != $gid )
                 {
-                    blog( "mailbox $maildir for $account inaccessible" );
-                    err( $c, 'mailbox not found' );
+                    blog( "maildrop $maildir for $account inaccessible" );
+                    err( $c, 'maildrop not found' );
                     last;
                 }
 
                 blog( "DEBUG chrooted with privs $uid:$gid" ) if DEBUG;
-                tally_mailbox( $mailbox );
-                blog( "$account authenticated for mailbox $maildir" );
-                blog( "found $mailbox->{count} messages for $account" );
+                tally_maildrop( \%maildrop );
+                blog( "$account authenticated for maildrop $maildir" );
+                blog( "found $maildrop{count} messages for $account" );
 
                 print $c "+OK little peepo welcomes you\r\n";
             }
@@ -242,13 +242,13 @@ while ( 1 )
         #
         elsif ( $cmd eq 'STAT' )
         {
-            print $c "+OK $mailbox->{count} $mailbox->{bytes}\r\n";
+            print $c "+OK $maildrop{count} $maildrop{bytes}\r\n";
         }
         elsif ( $cmd eq 'LIST' or $cmd eq 'UIDL' )
         {
-            blog( "DEBUG found $mailbox->{count} messages" ) if DEBUG;
+            blog( "DEBUG found $maildrop{count} messages" ) if DEBUG;
 
-            my $count = $mailbox->{count};
+            my $count = $maildrop{count};
 
             if ( $count == 0 )
             {
@@ -259,25 +259,25 @@ while ( 1 )
 
             if ( length $p[1] )
             {
-                err( $c, 'nothing' ), next if !defined $mailbox->{msgs}{$num};
+                err( $c, 'not found' ), next if !defined $maildrop{msgs}{$num};
 
                 my $field = $cmd eq 'LIST' ? 'bytes' : 'uid';
-                print $c "+OK $num $mailbox->{msgs}{$num}{$field}\r\n";
+                print $c "+OK $num $maildrop{msgs}{$num}{$field}\r\n";
             }
             else
             {
                 my $field = $cmd eq 'LIST' ? 'bytes' : 'uid';
                 print $c "+OK $count messages\r\n";
-                print $c "$_ $mailbox->{msgs}{$_}{$field}\r\n" for 1..$count;
+                print $c "$_ $maildrop{msgs}{$_}{$field}\r\n" for 1..$count;
                 print $c ".\r\n";
             }
         }
         elsif ( $cmd eq 'TOP' and length $num and length $opt )
         {
-            err( $c, 'nothing' ), next if !defined $mailbox->{msgs}{$num};
+            err( $c, 'not found' ), next if !defined $maildrop{msgs}{$num};
 
             print $c "+OK only $opt lines\r\n";
-            open( my $fh, '<', '/new/' . $mailbox->{msgs}{$num}{file} );
+            open( my $fh, '<', '/new/' . $maildrop{msgs}{$num}{file} );
             binmode( $fh );
             while ( $opt >= 0 and my $line = <$fh> )
             {
@@ -289,15 +289,15 @@ while ( 1 )
         }
         elsif ( $cmd eq 'RETR' and length $p[1] )
         {
-            err( $c, 'nothing' ), next if !defined $mailbox->{msgs}{$num};
+            err( $c, 'not found' ), next if !defined $maildrop{msgs}{$num};
 
-            my $file = $mailbox->{msgs}{$num}{file};
+            my $file = $maildrop{msgs}{$num}{file};
             my $mail = "From: little peepo\r\nTo: you\r\n\r\nmail fail ;(";
             open( my $fh, '<', "/new/$file" );
             { binmode( $fh ); local $/; $mail = <$fh>; };
             close( $fh );
 
-            my $ok = print $c "+OK $mailbox->{msgs}{$num}{bytes} bytes\r\n"
+            my $ok = print $c "+OK $maildrop{msgs}{$num}{bytes} bytes\r\n"
                               . "$mail\r\n.\r\n";
 
             if ( $ok )
@@ -305,14 +305,14 @@ while ( 1 )
                 my $newfile = $file =~ /:2,$/ ? "${file}S" : "$file:2,S";
                 $ok = rename( "/new/$file", "/cur/$newfile" );
                 blog( "RETR $file -> $newfile" ) if $ok;
-                $mailbox->{msgs}{$num}{file} = $newfile if $ok;
+                $maildrop{msgs}{$num}{file} = $newfile if $ok;
             }
         }
         elsif ( $cmd eq 'DELE' and length $p[1] )
         {
-            err( $c, 'nothing' ), next if !defined $mailbox->{msgs}{$num};
+            err( $c, 'not found' ), next if !defined $maildrop{msgs}{$num};
 
-            my $file = $mailbox->{msgs}{$num}{file};
+            my $file = $maildrop{msgs}{$num}{file};
             my $newfile = $file =~ s/(?::2,[^T]?)?$/:2,T/r;
             my $ok = rename( "/cur/$file", "/cur/$newfile" );
             blog( "DELE $file -> $newfile" ) if $ok;
@@ -360,12 +360,12 @@ sub err
     print $c "-ERR $msg\r\n";
 }
 
-sub tally_mailbox
+sub tally_maildrop
 {
-    my ( $mailbox ) = @_;
+    my ( $maildrop ) = @_;
 
-    undef $mailbox->{msgs};
-    $mailbox->{count} = $mailbox->{bytes} = 0;
+    undef $maildrop->{msgs};
+    $maildrop->{count} = $maildrop->{bytes} = 0;
 
     for ( glob('/new/*') )
     {
@@ -375,10 +375,10 @@ sub tally_mailbox
         my $file = basename( $_ );
         my ( $uid ) = $file =~ /^([^,:]+)/;
 
-        $mailbox->{count}++;
-        $mailbox->{bytes} += $fs;
-        $mailbox->{msgs}{$mailbox->{count}}{file} = $file;
-        $mailbox->{msgs}{$mailbox->{count}}{uid} = md5_hex( $uid );
-        $mailbox->{msgs}{$mailbox->{count}}{bytes} = $fs;
+        $maildrop->{count}++;
+        $maildrop->{bytes} += $fs;
+        $maildrop->{msgs}{$maildrop->{count}}{file} = $file;
+        $maildrop->{msgs}{$maildrop->{count}}{uid} = md5_hex( $uid );
+        $maildrop->{msgs}{$maildrop->{count}}{bytes} = $fs;
     }
 }
