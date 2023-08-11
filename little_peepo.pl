@@ -246,27 +246,16 @@ while ( 1 )
         }
         elsif ( $cmd eq 'LIST' or $cmd eq 'UIDL' )
         {
-            blog( "DEBUG found $maildrop{count} messages" ) if DEBUG;
-
             my $count = $maildrop{count};
-
-            if ( $count == 0 )
-            {
-                print $c "+OK nothing here\r\n.\r\n" if $cmd eq 'LIST';
-                err( $c, 'nothing here' ) if $cmd eq 'UIDL';
-                next;
-            }
+            my $field = $cmd eq 'LIST' ? 'bytes' : 'uid';
 
             if ( length $p[1] )
             {
                 err( $c, 'not found' ), next if !defined $maildrop{msgs}{$num};
-
-                my $field = $cmd eq 'LIST' ? 'bytes' : 'uid';
                 print $c "+OK $num $maildrop{msgs}{$num}{$field}\r\n";
             }
             else
             {
-                my $field = $cmd eq 'LIST' ? 'bytes' : 'uid';
                 print $c "+OK $count messages\r\n";
                 print $c "$_ $maildrop{msgs}{$_}{$field}\r\n" for 1..$count;
                 print $c ".\r\n";
