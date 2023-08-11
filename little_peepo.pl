@@ -222,14 +222,14 @@ while ( 1 )
                 }
 
                 # jailing and/or privilege drop failed
-                if ( !$j or $> != $uid or ($) =~ /(^\d+)/)[0] != $gid )
+                if ( $! or !$j or $> != $uid or ($) =~ /(^\d+)/)[0] != $gid )
                 {
                     blog( "mailbox $maildir for $account inaccessible" );
                     err( $c, 'mailbox not found' );
                     last;
                 }
 
-                blog( "DEBUG chrooted with privs $>:$)" ) if DEBUG;
+                blog( "DEBUG chrooted with privs $uid:$gid" ) if DEBUG;
                 tally_mailbox( $mailbox, $domain );
                 blog( "$account authenticated for mailbox $maildir" );
                 blog( "found $mailbox->{count} messages for $account" );
