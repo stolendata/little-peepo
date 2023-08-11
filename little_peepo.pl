@@ -230,7 +230,7 @@ while ( 1 )
                 }
 
                 blog( "DEBUG chrooted with privs $uid:$gid" ) if DEBUG;
-                tally_mailbox( $mailbox, $domain );
+                tally_mailbox( $mailbox );
                 blog( "$account authenticated for mailbox $maildir" );
                 blog( "found $mailbox->{count} messages for $account" );
 
@@ -362,24 +362,23 @@ sub err
 
 sub tally_mailbox
 {
-    my ( $mailbox, $domain ) = @_;
+    my ( $mailbox ) = @_;
 
     undef $mailbox->{msgs};
     $mailbox->{count} = $mailbox->{bytes} = 0;
 
     for ( glob('/new/*') )
     {
-        next unless ( -f $_ and -r $_ and $_ !~ /:2,.$/ and (my $fs = -s $_) );
+        next unless ( -f $_ and -r $_ and $_ !~ /:2,[a-z0-9]+$/i
+                      and (my $fs = -s $_) );
 
-        $domain =~ tr/./-/;
         my $file = basename( $_ );
-        my ( $uid_domain ) = $file =~ /^.+?[.].+?[.]([^,]+),?/;
-        my $uid = $file =~ s/$uid_domain.*$/$domain/r;
+        my ( $uid ) = $file =~ /^([^,:]+)/;
 
         $mailbox->{count}++;
         $mailbox->{bytes} += $fs;
         $mailbox->{msgs}{$mailbox->{count}}{file} = $file;
-        $mailbox->{msgs}{$mailbox->{count}}{uid} = $uid;
+        $mailbox->{msgs}{$mailbox->{count}}{uid} = md5_hex( $uid );
         $mailbox->{msgs}{$mailbox->{count}}{bytes} = $fs;
     }
 }
