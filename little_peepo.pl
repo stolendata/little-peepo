@@ -92,8 +92,8 @@ while ( 1 )
     srand();
     my $domain = $c->get_servername;
     my $banner = '<';
-    $banner .= ( 'a'..'z', 'A'..'Z' )[rand(52)] for 1..8;
-    $banner .= "$$.$conn_start\@$domain>";
+    $banner .= ( 'a'..'z', 'A'..'Z' )[rand(52)] for 1..10;
+    $banner .= "$$." . substr( $conn_start, 0, -2 ) . "\@$domain>";
 
     blog( "connected to $domain with " . $c->get_sslversion );
     print $c "+OK little peepo is ready $banner\r\n";
