@@ -265,12 +265,14 @@ while ( 1 )
         {
             err( $c, 'not found' ), next if !defined $maildrop{msgs}{$num};
 
+            my $top = 0;
             ok( $c, "only $opt lines" );
             open( my $fh, '<:raw', '/new/' . $maildrop{msgs}{$num}{file} );
             while ( $opt >= 0 and my $line = <$fh> )
             {
                 print $c $line;
-                $opt-- if $line =~ /^\r?\n$/;
+                $top = 1 if $line =~ /^\r?\n$/;
+                $opt-- if $top;
             }
             print $c "\r\n.\r\n";
             close( $fh );
