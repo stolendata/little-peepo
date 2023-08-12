@@ -266,32 +266,39 @@ while ( 1 )
             err( $c, 'not found' ), next if !defined $maildrop{msgs}{$num};
 
             ok( $c, "only $opt lines" );
-            open( my $fh, '<', '/new/' . $maildrop{msgs}{$num}{file} );
-            binmode( $fh );
+            open( my $fh, '<:raw', '/new/' . $maildrop{msgs}{$num}{file} );
             while ( $opt >= 0 and my $line = <$fh> )
             {
                 print $c $line;
                 $opt-- if $line =~ /^\r?\n$/;
             }
-            close( $fh );
             print $c "\r\n.\r\n";
+            close( $fh );
         }
         elsif ( $cmd eq 'RETR' and length $p[1] )
         {
             err( $c, 'not found' ), next if !defined $maildrop{msgs}{$num};
 
-            my $file = $maildrop{msgs}{$num}{file};
-            my $mail = "From: little peepo\r\nTo: you\r\n\r\nmail fail ;(";
-            open( my $fh, '<', "/new/$file" );
-            { binmode( $fh ); local $/; $mail = <$fh>; };
-            close( $fh );
-
-            if ( ok($c, "$maildrop{msgs}{$num}{bytes} bytes\r\n$mail\r\n.") )
+            if ( my $ok = ok($c, "$maildrop{msgs}{$num}{bytes} bytes") )
             {
-                my $newfile = $file =~ /:2,$/ ? "${file}S" : "$file:2,S";
-                my $ok = rename( "/new/$file", "/cur/$newfile" );
-                blog( "RETR $file -> $newfile" ) if $ok;
-                $maildrop{msgs}{$num}{file} = $newfile if $ok;
+                my $out;
+                my $file = $maildrop{msgs}{$num}{file};
+                open( my $fh, '<:raw', "/new/$file" );
+                $ok = print $c $out while ( $ok and read($fh, $out, 1024) );
+                print $c "\r\n.\r\n";
+                close( $fh );
+
+                if ( $ok )
+                {
+                    my $newfile = $file =~ /:2,$/ ? "${file}S" : "$file:2,S";
+                    $ok = rename( "/new/$file", "/cur/$newfile" );
+                    blog( "RETR $file -> $newfile" ) if $ok;
+                    $maildrop{msgs}{$num}{file} = $newfile if $ok;
+                }
+            }
+            else
+            {
+                err( $c, 'cannot access message' );
             }
         }
         elsif ( $cmd eq 'DELE' and length $p[1] )
@@ -301,10 +308,11 @@ while ( 1 )
             my $file = $maildrop{msgs}{$num}{file};
             my $newfile = $file =~ s/(?::2,[^T]?)?$/:2,T/r;
             my $ok = rename( "/cur/$file", "/cur/$newfile" );
-            blog( "DELE $file -> $newfile" ) if $ok;
-            push( @dele, $newfile ) if $ok;
 
-            ok( $c, 'poof' );
+            push( @dele, $newfile ) if $ok;
+            blog( "DELE $file -> $newfile" ) if $ok;
+            ok( $c, 'poof' ) if $ok;
+            err( $c, 'cannot access message' ) if !$ok;
         }
         elsif ( $cmd eq 'RSET' )
         {
