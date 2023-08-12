@@ -96,7 +96,7 @@ while ( 1 )
     $banner .= "$$." . substr( $conn_start, 0, -2 ) . "\@$domain>";
 
     blog( $c->peerhost . " connected to $domain with " . $c->get_sslversion );
-    print $c "+OK little peepo is ready $banner\r\n";
+    ok( $c, "little peepo is ready $banner" );
 
     while ( $c->connected )
     {
@@ -147,12 +147,12 @@ while ( 1 )
         if ( $cmd eq 'QUIT' )
         {
             blog( "quit after sending $cmd_count commands" );
-            print $c "+OK bye\r\n";
+            ok( $c, 'bye' );
             last;
         }
         elsif ( $cmd eq 'CAPA' )
         {
-            print $c "+OK little peepo spellbook\r\n";
+            ok( $c, 'little peepo spellbook' );
             print $c "$_\r\n" for ( 'IMPLEMENTATION little-peepo-v0.2',
                                     'LOGIN-DELAY 120', 'EXPIRE 0',
                                     'USER', 'UIDL', 'TOP', '.' );
@@ -182,7 +182,7 @@ while ( 1 )
             elsif ( $cmd eq 'USER' and length $p[1] )
             {
                 $account = $p[1];
-                print $c "+OK go on\r\n";
+                ok( $c, 'go on' );
             }
             elsif ( $cmd eq 'PASS' and length $p[1] >= 15 and length $account )
             {
@@ -234,7 +234,7 @@ while ( 1 )
                 blog( "$account authenticated for maildrop $maildir" );
                 blog( "found $maildrop{count} messages for $account" );
 
-                print $c "+OK little peepo welcomes you\r\n";
+                ok( $c, 'little peepo welcomes you' );
             }
         }
         #
@@ -242,7 +242,7 @@ while ( 1 )
         #
         elsif ( $cmd eq 'STAT' )
         {
-            print $c "+OK $maildrop{count} $maildrop{bytes}\r\n";
+            ok( $c, "$maildrop{count} $maildrop{bytes}" );
         }
         elsif ( $cmd eq 'LIST' or $cmd eq 'UIDL' )
         {
@@ -252,11 +252,11 @@ while ( 1 )
             if ( length $p[1] )
             {
                 err( $c, 'not found' ), next if !defined $maildrop{msgs}{$num};
-                print $c "+OK $num $maildrop{msgs}{$num}{$field}\r\n";
+                ok( $c, "$num $maildrop{msgs}{$num}{$field}" );
             }
             else
             {
-                print $c "+OK $count messages\r\n";
+                ok( $c, "$count messages" );
                 print $c "$_ $maildrop{msgs}{$_}{$field}\r\n" for 1..$count;
                 print $c ".\r\n";
             }
@@ -265,7 +265,7 @@ while ( 1 )
         {
             err( $c, 'not found' ), next if !defined $maildrop{msgs}{$num};
 
-            print $c "+OK only $opt lines\r\n";
+            ok( $c, "only $opt lines" );
             open( my $fh, '<', '/new/' . $maildrop{msgs}{$num}{file} );
             binmode( $fh );
             while ( $opt >= 0 and my $line = <$fh> )
@@ -286,13 +286,10 @@ while ( 1 )
             { binmode( $fh ); local $/; $mail = <$fh>; };
             close( $fh );
 
-            my $ok = print $c "+OK $maildrop{msgs}{$num}{bytes} bytes\r\n"
-                              . "$mail\r\n.\r\n";
-
-            if ( $ok )
+            if ( ok($c, "$maildrop{msgs}{$num}{bytes} bytes\r\n$mail\r\n.") )
             {
                 my $newfile = $file =~ /:2,$/ ? "${file}S" : "$file:2,S";
-                $ok = rename( "/new/$file", "/cur/$newfile" );
+                my $ok = rename( "/new/$file", "/cur/$newfile" );
                 blog( "RETR $file -> $newfile" ) if $ok;
                 $maildrop{msgs}{$num}{file} = $newfile if $ok;
             }
@@ -307,16 +304,16 @@ while ( 1 )
             blog( "DELE $file -> $newfile" ) if $ok;
             push( @dele, $newfile ) if $ok;
 
-            print $c "+OK poof\r\n";
+            ok( $c, 'poof' );
         }
         elsif ( $cmd eq 'RSET' )
         {
             @dele = ();
-            print $c "+OK\r\n";
+            ok( $c, 'deletions undone' );
         }
         elsif ( $cmd eq 'NOOP' )
         {
-            print $c "+OK\r\n";
+            ok( $c, 'zzz' );
         }
         else
         {
@@ -340,14 +337,9 @@ sub blog
     printf( "%i [%s]: %s\n", (time, ($$ == $master ? 'master' : $$), $msg) );
 }
 
-sub err
-{
-    my ( $c, $msg ) = @_;
+sub ok { my ( $c, $msg ) = @_; return print $c "+OK $msg\r\n"; }
 
-    $errs++;
-    sleep 1;
-    print $c "-ERR $msg\r\n";
-}
+sub err { my ( $c, $msg ) = @_; $errs++; sleep 1; print $c "-ERR $msg\r\n"; }
 
 sub tally_maildrop
 {
