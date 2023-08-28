@@ -293,7 +293,7 @@ while ( 1 )
                 my $out;
                 my $file = $maildrop{msgs}{$num}{file};
                 open( my $fh, '<:raw', "/new/$file" );
-                $ok = print $c $out while ( $ok and read($fh, $out, 1024) );
+                $ok = print $c $out while ( $ok and read($fh, $out, 4096) );
                 print $c "\r\n.\r\n";
                 close( $fh );
 
