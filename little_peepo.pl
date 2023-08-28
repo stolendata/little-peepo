@@ -242,28 +242,34 @@ while ( 1 )
         #
         elsif ( $cmd eq 'STAT' )
         {
-            ok( $c, "$maildrop{count} $maildrop{bytes}" );
+            ok( $c, $maildrop{count} - scalar @dele . " $maildrop{bytes}" );
         }
         elsif ( $cmd eq 'LIST' or $cmd eq 'UIDL' )
         {
-            my $count = $maildrop{count};
+            my $visible = $maildrop{count} - scalar @dele;
             my $field = $cmd eq 'LIST' ? 'bytes' : 'uid';
 
             if ( length $p[1] )
             {
                 err( $c, 'not found' ), next if !defined $maildrop{msgs}{$num};
+                err( $c, 'not found' ), next if defined $maildrop{dele}{$num};
                 ok( $c, "$num $maildrop{msgs}{$num}{$field}" );
             }
             else
             {
-                ok( $c, "$count messages" );
-                print $c "$_ $maildrop{msgs}{$_}{$field}\r\n" for 1..$count;
+                ok( $c, "$visible messages" );
+                for ( 1..$maildrop{count} )
+                {
+                    next if defined $maildrop{dele}{$num};
+                    print $c "$_ $maildrop{msgs}{$_}{$field}\r\n";
+                }
                 print $c ".\r\n";
             }
         }
         elsif ( $cmd eq 'TOP' and length $num and length $opt )
         {
             err( $c, 'not found' ), next if !defined $maildrop{msgs}{$num};
+            err( $c, 'not found' ), next if defined $maildrop{dele}{$num};
 
             my $top = 0;
             ok( $c, "only $opt lines" );
@@ -280,6 +286,7 @@ while ( 1 )
         elsif ( $cmd eq 'RETR' and length $p[1] )
         {
             err( $c, 'not found' ), next if !defined $maildrop{msgs}{$num};
+            err( $c, 'not found' ), next if defined $maildrop{dele}{$num};
 
             if ( my $ok = ok($c, "$maildrop{msgs}{$num}{bytes} bytes") )
             {
@@ -306,12 +313,14 @@ while ( 1 )
         elsif ( $cmd eq 'DELE' and length $p[1] )
         {
             err( $c, 'not found' ), next if !defined $maildrop{msgs}{$num};
+            err( $c, 'not found' ), next if defined $maildrop{dele}{$num};
 
             my $file = $maildrop{msgs}{$num}{file};
             my $newfile = $file =~ s/(?::2,[^T]?)?$/:2,T/r;
             my $ok = rename( "/cur/$file", "/cur/$newfile" );
 
             push( @dele, $newfile ) if $ok;
+            $maildrop{dele}{$num} = 1 if $ok;
             blog( "DELE $file -> $newfile" ) if $ok;
             ok( $c, 'poof' ) if $ok;
             err( $c, 'cannot access message' ) if !$ok;
@@ -319,6 +328,7 @@ while ( 1 )
         elsif ( $cmd eq 'RSET' )
         {
             @dele = ();
+            delete $maildrop{dele};
             ok( $c, 'deletions undone' );
         }
         elsif ( $cmd eq 'NOOP' )
