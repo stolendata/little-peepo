@@ -354,7 +354,7 @@ sub blog
 {
     my ( $msg ) = @_;
 
-    printf( "%i [%s]: %s\n", (time, ($$ == $master ? 'master' : $$), $msg) );
+    print time . ' [' . ( $$ == $master ? 'master' : $$ ) . "]: $msg\n";
 }
 
 sub ok { my ( $c, $msg ) = @_; return print $c "+OK $msg\r\n"; }
