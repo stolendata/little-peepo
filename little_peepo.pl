@@ -242,7 +242,7 @@ while ( 1 )
         #
         elsif ( $cmd eq 'STAT' )
         {
-            ok( $c, $maildrop{count} - scalar @dele . " $maildrop{bytes}" );
+            ok( $c, ($maildrop{count} - scalar @dele) . " $maildrop{bytes}" );
         }
         elsif ( $cmd eq 'LIST' or $cmd eq 'UIDL' )
         {
