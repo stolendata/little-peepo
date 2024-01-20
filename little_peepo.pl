@@ -19,6 +19,7 @@ use Digest::MD5 'md5_hex';
 use Digest::SHA 'sha256_base64';
 use File::Basename 'basename';
 use IO::Socket::SSL;
+use POSIX ':sys_wait_h';
 
 use constant DEBUG=>1;
 use constant MAX_CLIENTS=>5;
@@ -37,7 +38,7 @@ my ( $master, $peepos, $certs ) = ( $$, undef, undef );
 my ( $reload, $clients, $errs ) = ( 1, 0, 0 );
 
 $SIG{HUP} = sub { $reload = 1; };
-$SIG{CHLD} = sub { wait; $clients--; };
+$SIG{CHLD} = sub { $clients-- while waitpid( -1, WNOHANG ) > 0; };
 
 my $sock = IO::Socket::INET->new( LocalAddr=>LISTEN_IP, LocalPort=>LISTEN_PORT,
                                   Proto=>'tcp', Listen=>MAX_CLIENTS,
