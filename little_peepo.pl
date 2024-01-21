@@ -30,27 +30,48 @@ use constant CLIENT_TIMEOUT_SEC=>10;
 use constant ERRS_BEFORE_KICK=>10;
 use constant EMPTY_TRASH=>1;
 use constant SSL_TLS_VERSIONS=>'!SSLv23:!SSLv2:!SSLv3:!TLSv1:!TLSv11';
-use constant LISTEN_IP=>'0.0.0.0';
-use constant LISTEN_PORT=>995;
+use constant LISTEN_IP4=>'0.0.0.0';
+use constant LISTEN_PORT4=>995;
+use constant LISTEN_IP6=>'::';
+use constant LISTEN_PORT6=>995;
 use constant ACCOUNTS_FILE=>'./peepos.conf'; # here be POP3 accounts/passwords
 use constant CERTS_FILE=>'./domains_certs.conf'; # and here be domain/cert map
 use constant MAILDIR=>'/var/mail/{U}'; # {U} expands to account's local user
 
 my ( $master, $peepos, $certs ) = ( $$, undef, undef );
-my ( $reload, $clients, $errs, $c ) = ( 1, 0, 0, undef );
+my ( $reload, $clients, $errs ) = ( 1, 0, 0 );
+my ( $c, $sock4, $sock6 );
 
 $SIG{HUP} = sub { $reload = 1; };
 $SIG{CHLD} = sub { $clients-- while waitpid( -1, WNOHANG ) > 0; };
 
 my $sel = IO::Select->new;
 
-my $sock = IO::Socket::IP->new( Family=>AF_INET, LocalAddr=>LISTEN_IP, LocalPort=>LISTEN_PORT,
-                                Proto=>'tcp', Listen=>MAX_CLIENTS,
-                                ReuseAddr=>1, ReusePort=>1 ) or die $!;
+if ( length LISTEN_IP4 )
+{
+    $sock4 = IO::Socket::IP->new( Family=>AF_INET, LocalAddr=>LISTEN_IP4,
+                                  LocalPort=>LISTEN_PORT4, Listen=>MAX_CLIENTS,
+                                  Proto=>'tcp', ReuseAddr=>1, ReusePort=>1 );
 
-$sel->add( $sock );
+    if ( $sock4 )
+    {
+        $sel->add( $sock4 );
+        blog( 'little peepo is accepting IPv4 on port ' . LISTEN_PORT4 );
+    }
+}
 
-blog( 'little peepo is accepting connections on port ' . LISTEN_PORT );
+if ( length LISTEN_IP6 )
+{
+    $sock6 = IO::Socket::IP->new( Family=>AF_INET6, LocalAddr=>LISTEN_IP6,
+                                  LocalPort=>LISTEN_PORT6, Listen=>MAX_CLIENTS,
+                                  Proto=>'tcp', ReuseAddr=>1, ReusePort=>1 );
+
+    if ( $sock6 )
+    {
+        $sel->add( $sock6 );
+        blog( 'little peepo is accepting IPv6 on port ' . LISTEN_PORT6 );
+    }
+}
 
 PARENT: while ( 1 )
 {
@@ -67,12 +88,13 @@ PARENT: while ( 1 )
 
     my @rdy = $sel->can_read;
 
-    undef $c;
     for my $s ( @rdy )
     {
-        next unless $s = $sock;
+        next unless ( $s == $sock4 or $s == $sock6 );
 
-        $c = $sock->accept;
+        undef $c;
+        $c = $sock4->accept if $s == $sock4;
+        $c = $sock6->accept if $s == $sock6;
 
         if ( $c )
         {
