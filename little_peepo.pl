@@ -19,6 +19,7 @@ use Digest::MD5 'md5_hex';
 use Digest::SHA 'sha256_base64';
 use File::Basename 'basename';
 use IO::Select;
+use IO::Socket::IP;
 use IO::Socket::SSL;
 use POSIX ':sys_wait_h';
 
@@ -43,9 +44,9 @@ $SIG{CHLD} = sub { $clients-- while waitpid( -1, WNOHANG ) > 0; };
 
 my $sel = IO::Select->new;
 
-my $sock = IO::Socket::INET->new( LocalAddr=>LISTEN_IP, LocalPort=>LISTEN_PORT,
-                                  Proto=>'tcp', Listen=>MAX_CLIENTS,
-                                  ReuseAddr=>1, ReusePort=>1 ) or die $!;
+my $sock = IO::Socket::IP->new( Family=>AF_INET, LocalAddr=>LISTEN_IP, LocalPort=>LISTEN_PORT,
+                                Proto=>'tcp', Listen=>MAX_CLIENTS,
+                                ReuseAddr=>1, ReusePort=>1 ) or die $!;
 
 $sel->add( $sock );
 
