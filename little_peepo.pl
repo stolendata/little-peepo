@@ -146,17 +146,17 @@ while ( $c->connected )
         last;
     }
 
-    my ( $buf, $rb );
+    my $buf;
     eval
     {
         local $SIG{ALRM} = sub { die "timed out\n" };
         alarm CLIENT_TIMEOUT_SEC;
-        $rb = read( $c, $buf, 128 );
+        $buf = $c->readline;
         alarm 0;
     };
 
     # client stalled or connection dropped
-    if ( $@ or !$rb )
+    if ( $@ or !length $buf )
     {
         blog( "DEBUG connection hiccup, $!" ) if ( DEBUG and $! );
 
@@ -191,9 +191,9 @@ while ( $c->connected )
     elsif ( $cmd eq 'CAPA' )
     {
         ok( $c, 'little peepo spellbook' );
-        print $c "$_\r\n" for ( 'IMPLEMENTATION little-peepo-v0.3',
-                                'LOGIN-DELAY 120', 'EXPIRE 0',
-                                'USER', 'UIDL', 'TOP', '.' );
+        $c->print( "$_\r\n" ) for ( 'IMPLEMENTATION little-peepo-v0.3',
+                                    'LOGIN-DELAY 120', 'EXPIRE 0',
+                                    'USER', 'UIDL', 'TOP', '.' );
     }
     elsif ( $txphase == 0 )
     {
@@ -299,9 +299,9 @@ while ( $c->connected )
             for ( 1..$maildrop{count} )
             {
                 next if defined $maildrop{dele}{$num};
-                print $c "$_ $maildrop{msgs}{$_}{$field}\r\n";
+                $c->print( "$_ $maildrop{msgs}{$_}{$field}\r\n" );
             }
-            print $c ".\r\n";
+            $c->print( ".\r\n" );
         }
     }
     elsif ( $cmd eq 'TOP' and length $num and length $opt )
@@ -314,11 +314,11 @@ while ( $c->connected )
         open( my $fh, '<:raw', '/new/' . $maildrop{msgs}{$num}{file} );
         while ( $opt >= 0 and my $line = <$fh> )
         {
-            print $c $line;
+            $c->print( $line );
             $top = 1 if $line =~ /^\r?\n$/;
             $opt-- if $top;
         }
-        print $c "\r\n.\r\n";
+        $c->print( "\r\n.\r\n" );
         close( $fh );
     }
     elsif ( $cmd eq 'RETR' and length $p[1] )
@@ -331,8 +331,8 @@ while ( $c->connected )
             my $out;
             my $file = $maildrop{msgs}{$num}{file};
             open( my $fh, '<:raw', "/new/$file" );
-            $ok = print $c $out while ( $ok and read($fh, $out, 8192) );
-            print $c "\r\n.\r\n";
+            $ok = $c->print( $out ) while ( $ok and read($fh, $out, 8192) );
+            $c->print( "\r\n.\r\n" );
             close( $fh );
 
             if ( $ok )
@@ -394,9 +394,9 @@ sub blog
     print time . ' [' . ( $$ == $master ? 'master' : $$ ) . "]: $msg\n";
 }
 
-sub ok { my ( $c, $msg ) = @_; return print $c "+OK $msg\r\n"; }
+sub ok { my ( $c, $msg ) = @_; return $c->print( "+OK $msg\r\n" ); }
 
-sub err { my ( $c, $msg ) = @_; $errs++; sleep 1; print $c "-ERR $msg\r\n"; }
+sub err { my ( $c, $msg ) = @_; $errs++; sleep 1; $c->print( "-ERR $msg\r\n" ); }
 
 sub tally_maildrop
 {
