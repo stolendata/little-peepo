@@ -134,7 +134,7 @@ $banner .= ( 'a'..'z', 'A'..'Z' )[rand(52)] for 1..10;
 $banner .= "$$." . substr( $conn_start, 0, -2 ) . "\@$domain>";
 
 blog( $c->peerhost . " connected to $domain with " . $c->get_sslversion );
-ok( $c, "little peepo is ready $banner" );
+ok( "little peepo is ready $banner" );
 
 while ( $c->connected )
 {
@@ -161,7 +161,7 @@ while ( $c->connected )
         blog( "DEBUG connection hiccup, $!" ) if ( DEBUG and $! );
 
         blog( "timed out after sending $cmd_count commands" ) if $@;
-        err( $c, 'taking too long' ) if $@;
+        err( 'taking too long' ) if $@;
 
         blog( "dropped after sending $cmd_count commands" ) unless $@;
 
@@ -185,12 +185,12 @@ while ( $c->connected )
     if ( $cmd eq 'QUIT' )
     {
         blog( "quit after sending $cmd_count commands" );
-        ok( $c, 'bye' );
+        ok( 'bye' );
         last;
     }
     elsif ( $cmd eq 'CAPA' )
     {
-        ok( $c, 'little peepo spellbook' );
+        ok( 'little peepo spellbook' );
         $c->print( "$_\r\n" ) for ( 'IMPLEMENTATION little-peepo-v0.3',
                                     'LOGIN-DELAY 120', 'EXPIRE 0',
                                     'USER', 'UIDL', 'TOP', '.' );
@@ -214,13 +214,13 @@ while ( $c->connected )
             }
             else
             {
-                err( $c, 'nope' );
+                err( 'nope' );
             }
         }
         elsif ( $cmd eq 'USER' and length $p[1] )
         {
             $account = $p[1];
-            ok( $c, 'go on' );
+            ok( 'go on' );
         }
         elsif ( $cmd eq 'PASS' and length $p[1] >= 15 and length $account )
         {
@@ -235,13 +235,13 @@ while ( $c->connected )
             }
             else
             {
-                err( $c, 'nope' );
+                err( 'nope' );
                 $account = '';
             }
         }
         else
         {
-            err( $c, 'uhh' );
+            err( 'uhh' );
         }
 
         # credentials matched
@@ -263,7 +263,7 @@ while ( $c->connected )
             if ( $! or !$j or $> != $uid or ($) =~ /(^\d+)/)[0] != $gid )
             {
                 blog( "maildrop $maildir for $account inaccessible" );
-                err( $c, 'maildrop not found' );
+                err( 'maildrop not found' );
                 last;
             }
 
@@ -272,7 +272,7 @@ while ( $c->connected )
             blog( "$account authenticated for maildrop $maildir" );
             blog( "found $maildrop{count} messages for $account" );
 
-            ok( $c, 'little peepo welcomes you' );
+            ok( 'little peepo welcomes you' );
         }
     }
     #
@@ -280,7 +280,7 @@ while ( $c->connected )
     #
     elsif ( $cmd eq 'STAT' )
     {
-        ok( $c, ($maildrop{count} - scalar @dele) . " $maildrop{bytes}" );
+        ok( ($maildrop{count} - scalar @dele) . " $maildrop{bytes}" );
     }
     elsif ( $cmd eq 'LIST' or $cmd eq 'UIDL' )
     {
@@ -289,13 +289,13 @@ while ( $c->connected )
 
         if ( length $p[1] )
         {
-            err( $c, 'not found' ), next if !defined $maildrop{msgs}{$num};
-            err( $c, 'not found' ), next if defined $maildrop{dele}{$num};
-            ok( $c, "$num $maildrop{msgs}{$num}{$field}" );
+            err( 'not found' ), next if !defined $maildrop{msgs}{$num};
+            err( 'not found' ), next if defined $maildrop{dele}{$num};
+            ok( "$num $maildrop{msgs}{$num}{$field}" );
         }
         else
         {
-            ok( $c, "$visible messages" );
+            ok( "$visible messages" );
             for ( 1..$maildrop{count} )
             {
                 next if defined $maildrop{dele}{$num};
@@ -306,11 +306,11 @@ while ( $c->connected )
     }
     elsif ( $cmd eq 'TOP' and length $num and length $opt )
     {
-        err( $c, 'not found' ), next if !defined $maildrop{msgs}{$num};
-        err( $c, 'not found' ), next if defined $maildrop{dele}{$num};
+        err( 'not found' ), next if !defined $maildrop{msgs}{$num};
+        err( 'not found' ), next if defined $maildrop{dele}{$num};
 
         my $top = 0;
-        ok( $c, "only $opt lines" );
+        ok( "only $opt lines" );
         open( my $fh, '<:raw', '/new/' . $maildrop{msgs}{$num}{file} );
         while ( $opt >= 0 and my $line = <$fh> )
         {
@@ -323,10 +323,10 @@ while ( $c->connected )
     }
     elsif ( $cmd eq 'RETR' and length $p[1] )
     {
-        err( $c, 'not found' ), next if !defined $maildrop{msgs}{$num};
-        err( $c, 'not found' ), next if defined $maildrop{dele}{$num};
+        err( 'not found' ), next if !defined $maildrop{msgs}{$num};
+        err( 'not found' ), next if defined $maildrop{dele}{$num};
 
-        if ( my $ok = ok($c, "$maildrop{msgs}{$num}{bytes} bytes") )
+        if ( my $ok = ok("$maildrop{msgs}{$num}{bytes} bytes") )
         {
             my $out;
             my $file = $maildrop{msgs}{$num}{file};
@@ -345,13 +345,13 @@ while ( $c->connected )
         }
         else
         {
-            err( $c, 'cannot access message' );
+            err( 'cannot access message' );
         }
     }
     elsif ( $cmd eq 'DELE' and length $p[1] )
     {
-        err( $c, 'not found' ), next if !defined $maildrop{msgs}{$num};
-        err( $c, 'not found' ), next if defined $maildrop{dele}{$num};
+        err( 'not found' ), next if !defined $maildrop{msgs}{$num};
+        err( 'not found' ), next if defined $maildrop{dele}{$num};
 
         my $file = $maildrop{msgs}{$num}{file};
         my $newfile = $file =~ s/(?::2,[^T]?)?$/:2,T/r;
@@ -360,22 +360,22 @@ while ( $c->connected )
         push( @dele, $newfile ) if $ok;
         $maildrop{dele}{$num} = 1 if $ok;
         blog( "DELE $file -> $newfile" ) if $ok;
-        ok( $c, 'poof' ) if $ok;
-        err( $c, 'cannot access message' ) if !$ok;
+        ok( 'poof' ) if $ok;
+        err( 'cannot access message' ) if !$ok;
     }
     elsif ( $cmd eq 'RSET' )
     {
         @dele = ();
         delete $maildrop{dele};
-        ok( $c, 'deletions undone' );
+        ok( 'deletions undone' );
     }
     elsif ( $cmd eq 'NOOP' )
     {
-        ok( $c, 'zzz' );
+        ok( 'zzz' );
     }
     else
     {
-        err( $c, 'not recognized' );
+        err( 'not recognized' );
     }
 }
 
@@ -394,9 +394,9 @@ sub blog
     print time . ' [' . ( $$ == $master ? 'master' : $$ ) . "]: $msg\n";
 }
 
-sub ok { my ( $c, $msg ) = @_; return $c->print( "+OK $msg\r\n" ); }
+sub ok { my ( $msg ) = @_; return $c->print( "+OK $msg\r\n" ); }
 
-sub err { my ( $c, $msg ) = @_; $errs++; sleep 1; $c->print( "-ERR $msg\r\n" ); }
+sub err { my ( $msg ) = @_; $errs++; sleep 1; $c->print( "-ERR $msg\r\n" ); }
 
 sub tally_maildrop
 {
