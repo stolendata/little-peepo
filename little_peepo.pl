@@ -47,29 +47,19 @@ $SIG{CHLD} = sub { $clients-- while waitpid( -1, WNOHANG ) > 0; };
 
 my $sel = IO::Select->new;
 
-if ( length LISTEN_IP4 )
+for ( [LISTEN_IP4, LISTEN_PORT4, AF_INET, \$sock4, 'IPv4'],
+      [LISTEN_IP6, LISTEN_PORT6, AF_INET6, \$sock6, 'IPv6'] )
 {
-    $sock4 = IO::Socket::IP->new( Family=>AF_INET, LocalAddr=>LISTEN_IP4,
-                                  LocalPort=>LISTEN_PORT4, Listen=>MAX_CLIENTS,
-                                  Proto=>'tcp', ReuseAddr=>1, ReusePort=>1 );
+    next unless length $_->[0];
 
-    if ( $sock4 )
+    ${$_->[3]} = IO::Socket::IP->new( Proto=>'tcp', ReuseAddr=>1, ReusePort=>1,
+                                      Listen=>MAX_CLIENTS, LocalAddr=>$_->[0],
+                                      LocalPort=>$_->[1], Family=>$_->[2] );
+
+    if ( ${$_->[3]} )
     {
-        $sel->add( $sock4 );
-        blog( 'little peepo is accepting IPv4 on port ' . LISTEN_PORT4 );
-    }
-}
-
-if ( length LISTEN_IP6 )
-{
-    $sock6 = IO::Socket::IP->new( Family=>AF_INET6, LocalAddr=>LISTEN_IP6,
-                                  LocalPort=>LISTEN_PORT6, Listen=>MAX_CLIENTS,
-                                  Proto=>'tcp', ReuseAddr=>1, ReusePort=>1 );
-
-    if ( $sock6 )
-    {
-        $sel->add( $sock6 );
-        blog( 'little peepo is accepting IPv6 on port ' . LISTEN_PORT6 );
+        $sel->add( ${$_->[3]} );
+        blog( "little peepo is accepting $_->[4] on port $_->[1]" );
     }
 }
 
