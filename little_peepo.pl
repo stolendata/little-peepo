@@ -377,16 +377,11 @@ if ( EMPTY_TRASH )
 $c->close;
 
 
-sub blog
-{
-    my ( $msg ) = @_;
+sub blog { print time . ( $$ == $master ? '[master]' : "[$$]" ) . ": @_\n"; }
 
-    print time . ' [' . ( $$ == $master ? 'master' : $$ ) . "]: $msg\n";
-}
+sub ok { return $c->print( "+OK $_[0]\r\n" ); }
 
-sub ok { my ( $msg ) = @_; return $c->print( "+OK $msg\r\n" ); }
-
-sub err { my ( $msg ) = @_; $errs++; sleep 1; $c->print( "-ERR $msg\r\n" ); }
+sub err { $errs++; sleep 1; $c->print( "-ERR $_[0]\r\n" ); }
 
 sub tally_maildrop
 {
