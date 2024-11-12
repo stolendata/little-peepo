@@ -24,7 +24,7 @@ use IO::Socket::SSL;
 use POSIX ':sys_wait_h';
 
 use constant DEBUG=>1;
-use constant MAX_CLIENTS=>5;
+use constant MAX_CLIENTS=>20;
 use constant AUTH_GRACE_SEC=>5;
 use constant CLIENT_TIMEOUT_SEC=>10;
 use constant ERRS_BEFORE_KICK=>10;
