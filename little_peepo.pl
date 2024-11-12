@@ -343,7 +343,7 @@ while ( $c->connected )
         err( 'not found' ), next if defined $maildrop{dele}{$num};
 
         my $file = $maildrop{msgs}{$num}{file};
-        my $newfile = $file =~ s/(?::2,[^T]?)?$/:2,T/r;
+        my $newfile = $file =~ s/(?::2,[^:]*)?$/:2,T/r;
         my $ok = rename( "/cur/$file", "/cur/$newfile" );
 
         push( @dele, $newfile ) if $ok;
@@ -391,16 +391,16 @@ sub tally_maildrop
 
     for ( glob('/new/*') )
     {
-        next unless ( -f $_ and -r $_ and $_ !~ /:2,[a-z0-9]+$/i
+        next unless ( -f $_ and -r $_ and $_ !~ /:2,[^:]*$/
                       and (my $fs = -s $_) );
 
         my $file = basename( $_ );
-        my ( $uid ) = $file =~ /^([^,:]+)/;
+        my $uid = md5_hex( "$user " . $file =~ s/:2,[^:]*$//r );
 
         $maildrop->{count}++;
         $maildrop->{bytes} += $fs;
         $maildrop->{msgs}{$maildrop->{count}}{file} = $file;
-        $maildrop->{msgs}{$maildrop->{count}}{uid} = md5_hex( $uid );
+        $maildrop->{msgs}{$maildrop->{count}}{uid} = $uid;
         $maildrop->{msgs}{$maildrop->{count}}{bytes} = $fs;
     }
 }
