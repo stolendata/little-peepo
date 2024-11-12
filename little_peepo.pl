@@ -128,11 +128,10 @@ ok( "little peepo is ready $banner" );
 
 while ( $c->connected )
 {
-    blog( 'kicking noisy client' ), last if $errs >= ERRS_BEFORE_KICK;
-
-    if ( $txphase == 0 and time - $conn_start >= AUTH_GRACE_SEC )
+    if ( ($txphase == 0 and time - $conn_start >= AUTH_GRACE_SEC)
+         or $errs >= ERRS_BEFORE_KICK )
     {
-        blog( 'kicking stalling client' );
+        blog( 'kicking uncooperative client' );
         last;
     }
 
