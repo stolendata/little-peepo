@@ -376,7 +376,7 @@ if ( EMPTY_TRASH )
 $c->close;
 
 
-sub blog { print time . ( $$ == $master ? '[master]' : "[$$]" ) . ": @_\n"; }
+sub blog { print time . ( $$ == $master ? ' [master]' : " [$$]" ) . ": @_\n"; }
 
 sub ok { return $c->print( "+OK $_[0]\r\n" ); }
 
