@@ -264,8 +264,11 @@ while ( $c->connected )
     #
     # transaction phase
     #
-    elsif ( $cmd eq 'STAT' )
+    elsif ( $cmd eq 'STAT' or $cmd eq 'RSET' )
     {
+        @dele = () if $cmd eq 'RSET';
+        delete $maildrop{dele}  if $cmd eq 'RSET';
+
         ok( ($maildrop{count} - scalar @dele) . " $maildrop{bytes}" );
     }
     elsif ( $cmd eq 'LIST' or $cmd eq 'UIDL' )
@@ -343,12 +346,6 @@ while ( $c->connected )
         push( @dele, $num );
         blog( "marked $maildrop{msgs}{$num}{file} as trash" );
         ok( 'poof' );
-    }
-    elsif ( $cmd eq 'RSET' )
-    {
-        @dele = ();
-        delete $maildrop{dele};
-        ok( 'deletions undone' );
     }
     elsif ( $cmd eq 'NOOP' )
     {
