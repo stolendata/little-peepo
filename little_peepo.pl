@@ -17,7 +17,6 @@ use warnings;
 
 use Digest::MD5 'md5_hex';
 use Digest::SHA 'sha256_base64';
-use File::Basename 'basename';
 use IO::Select;
 use IO::Socket::IP;
 use IO::Socket::SSL;
@@ -148,11 +147,9 @@ while ( $c->connected )
     if ( $@ or !length $buf )
     {
         blog( "DEBUG connection hiccup, $!" ) if ( DEBUG and $! );
-
+        blog( "dropped after sending $cmd_count commands" ) unless $@;
         blog( "timed out after sending $cmd_count commands" ) if $@;
         err( 'taking too long' ) if $@;
-
-        blog( "dropped after sending $cmd_count commands" ) unless $@;
 
         last;
     }
@@ -300,7 +297,7 @@ while ( $c->connected )
 
         my $top = 0;
         ok( "only $opt lines" );
-        open( my $fh, '<:raw', '/new/' . $maildrop{msgs}{$num}{file} );
+        open( my $fh, '<:raw', $maildrop{msgs}{$num}{file} );
         while ( $opt >= 0 and my $line = <$fh> )
         {
             $c->print( $line );
@@ -318,18 +315,17 @@ while ( $c->connected )
         if ( my $ok = ok("$maildrop{msgs}{$num}{bytes} bytes") )
         {
             my $out;
-            my $file = $maildrop{msgs}{$num}{file};
-            open( my $fh, '<:raw', "/new/$file" );
+            open( my $fh, '<:raw', $maildrop{msgs}{$num}{file} );
             $ok = $c->print( $out ) while ( $ok and read($fh, $out, 8192) );
             $c->print( "\r\n.\r\n" );
             close( $fh );
 
             if ( $ok )
             {
-                my $newfile = $file =~ /:2,$/ ? "${file}S" : "$file:2,S";
-                $ok = rename( "/new/$file", "/cur/$newfile" );
-                blog( "RETR $file -> $newfile" ) if $ok;
-                $maildrop{msgs}{$num}{file} = $newfile if $ok;
+                my $file = $maildrop{msgs}{$num}{file};
+                my $seen = "/cur/$maildrop{msgs}{$num}{base}:2,S";
+                blog( "RETR $file -> $seen" );
+                rename( $file, $seen ) and $maildrop{msgs}{$num}{file} = $seen;
             }
         }
         else
@@ -341,16 +337,12 @@ while ( $c->connected )
     {
         err( 'not found' ), next if !defined $maildrop{msgs}{$num};
         err( 'not found' ), next if defined $maildrop{dele}{$num};
+        err( 'not yet seen' ), next if $maildrop{msgs}{$num}{file} !~ /:2,S$/;
 
-        my $file = $maildrop{msgs}{$num}{file};
-        my $newfile = $file =~ s/(?::2,[^:]*)?$/:2,T/r;
-        my $ok = rename( "/cur/$file", "/cur/$newfile" );
-
-        push( @dele, $newfile ) if $ok;
-        $maildrop{dele}{$num} = 1 if $ok;
-        blog( "DELE $file -> $newfile" ) if $ok;
-        ok( 'poof' ) if $ok;
-        err( 'cannot access message' ) if !$ok;
+        $maildrop{dele}{$num} = 1;
+        push( @dele, $num );
+        blog( "marked $maildrop{msgs}{$num}{file} as trash" );
+        ok( 'poof' );
     }
     elsif ( $cmd eq 'RSET' )
     {
@@ -368,9 +360,14 @@ while ( $c->connected )
     }
 }
 
-if ( EMPTY_TRASH )
+for ( @dele )
 {
-    unlink "/cur/$_" and blog( "purged $_" ) for @dele;
+    my $file = $maildrop{msgs}{$_}{file};
+
+    unlink( $file ) and blog( "purged $file" ), next if EMPTY_TRASH;
+
+    my $trashed = "/cur/$maildrop{msgs}{$_}{base}:2,ST";
+    rename( $file, $trashed ) and blog( "trashed $file" );
 }
 
 $c->close;
@@ -389,17 +386,18 @@ sub tally_maildrop
     undef $maildrop->{msgs};
     $maildrop->{count} = $maildrop->{bytes} = 0;
 
-    for ( glob('/new/*') )
+    for ( glob('/new/* /cur/*') )
     {
-        next unless ( -f $_ and -r $_ and $_ !~ /:2,[^:]*$/
-                      and (my $fs = -s $_) );
+        next unless ( $_ =~ /:2,[^T]*T[A-Z]*$/
+                      and -f $_ and -r $_ and (my $fs = -s $_) );
 
-        my $file = basename( $_ );
-        my $uid = md5_hex( "$user " . $file =~ s/:2,[^:]*$//r );
+        my ( $base ) = $_ =~/^\/...\/([^:]+)/;
+        my $uid = md5_hex( "$user $base" );
 
         $maildrop->{count}++;
         $maildrop->{bytes} += $fs;
-        $maildrop->{msgs}{$maildrop->{count}}{file} = $file;
+        $maildrop->{msgs}{$maildrop->{count}}{file} = $_;
+        $maildrop->{msgs}{$maildrop->{count}}{base} = $base;
         $maildrop->{msgs}{$maildrop->{count}}{uid} = $uid;
         $maildrop->{msgs}{$maildrop->{count}}{bytes} = $fs;
     }
