@@ -246,7 +246,7 @@ while ( $c->connected )
             }
 
             # jailing and/or privilege drop failed
-            if ( $! or !$j or $> != $uid or ($) =~ /(^\d+)/)[0] != $gid )
+            if ( $! or !$j or $> != $uid or ($) =~ /^(\d+)/)[0] != $gid )
             {
                 blog( "maildrop $maildir for $account inaccessible" );
                 err( 'maildrop not found' );
