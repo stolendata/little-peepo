@@ -385,7 +385,7 @@ sub tally_maildrop
 
     for ( glob('/new/* /cur/*') )
     {
-        next unless ( $_ =~ /:2,[^T]*T[A-Z]*$/
+        next unless ( $_ !~ /:2,[^T]*T[A-Z]*$/
                       and -f $_ and -r $_ and (my $fs = -s $_) );
 
         my ( $base ) = $_ =~/^\/...\/([^:]+)/;
