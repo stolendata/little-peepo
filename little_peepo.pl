@@ -385,8 +385,7 @@ sub tally_maildrop
 
     for ( glob('/new/* /cur/*') )
     {
-        next unless ( $_ !~ /:2,[^T]*T[A-Z]*$/
-                      and -f $_ and -r $_ and (my $fs = -s $_) );
+        next if ( $_ =~ /:2,[^T]*T[A-Z]*$/ or ! -f -r $_ or !(my $fs = -s _) );
 
         my ( $base ) = $_ =~/^\/...\/([^:]+)/;
         my $uid = md5_base64( "$user $base" );
