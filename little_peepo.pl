@@ -156,7 +156,7 @@ while ( $c->connected )
 
     # auth phase
 
-    $buf =~ tr/a-zA-Z0-9 @._-//cd;
+    $buf =~ tr/a-zA-Z0-9 @#%&=)(,._-//cd;
     $buf =~ s/^\s+|\s+$//g;
     my @p = split( /\s+/, $buf );
     my $cmd = uc ( $p[0] // '' );
