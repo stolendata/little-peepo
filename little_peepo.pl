@@ -267,7 +267,7 @@ while ( $c->connected )
     elsif ( $cmd eq 'STAT' or $cmd eq 'RSET' )
     {
         @dele = () if $cmd eq 'RSET';
-        delete $maildrop{dele}  if $cmd eq 'RSET';
+        delete $maildrop{dele} if $cmd eq 'RSET';
 
         ok( ($maildrop{count} - scalar @dele) . " $maildrop{bytes}" );
     }
@@ -287,7 +287,7 @@ while ( $c->connected )
             ok( "$visible messages" );
             for ( 1..$maildrop{count} )
             {
-                next if defined $maildrop{dele}{$num};
+                next if defined $maildrop{dele}{$_};
                 $c->print( "$_ $maildrop{msgs}{$_}{$field}\r\n" );
             }
             $c->print( ".\r\n" );
