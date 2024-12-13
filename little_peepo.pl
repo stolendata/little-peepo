@@ -38,7 +38,7 @@ use constant CERTS_FILE=>'./domains_certs.conf'; # and here be domain/cert map
 use constant MAILDIR=>'/var/mail/{U}'; # {U} expands to account's local user
 
 my ( $master, $peepos, $certs ) = ( $$, undef, undef );
-my ( $reload, $clients, $errs ) = ( 1, 0, 0 );
+my ( $reload, $clients ) = ( 1, 0 );
 my ( $c, $sock4, $sock6 );
 
 $SIG{HUP} = sub { $reload = 1; };
@@ -112,7 +112,7 @@ if ( $SSL_ERROR )
     exit;
 }
 
-my ( $conn_start, $txphase, $maildir, %maildrop ) = ( time, 0, undef, () );
+my ( $conn_start, $errs, $txphase, %maildrop ) = ( time, 0, 0, () );
 my ( $account, $user, $cmd_count, @dele ) = ( undef, undef, 0, () );
 
 # APOP auth banner
@@ -233,7 +233,7 @@ while ( $c->connected )
         # credentials matched
         if ( $txphase )
         {
-            $maildir = MAILDIR =~ s/\{U\}/$user/gr;
+            my $maildir = MAILDIR =~ s/\{U\}/$user/gr;
             my ( $uid, $gid ) = ( getpwnam($user) )[2, 3];
 
             my $j = ( $uid // 0 ) ? chroot( $maildir ) : 0;
