@@ -235,14 +235,12 @@ while ( $c->connected )
         {
             my $maildir = MAILDIR =~ s/\{U\}/$user/gr;
             my ( $uid, $gid ) = ( getpwnam($user) )[2, 3];
-
             my $j = ( $uid // 0 ) ? chroot( $maildir ) : 0;
             $j = chdir( '/' ) if ( $j and $uid and $gid );
 
             if ( $j )
             {
-                $( = $gid; $) = $gid; $< = $uid; $> = $uid;
-                $( = $gid; $) = $gid; $< = $uid; $> = $uid;
+                do { $( = $gid; $) = $gid; $< = $uid; $> = $uid; } for 1..2;
             }
 
             # jailing and/or privilege drop failed
