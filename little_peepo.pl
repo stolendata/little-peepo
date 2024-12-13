@@ -119,8 +119,8 @@ my ( $account, $user, $cmd_count, @dele ) = ( undef, undef, 0, () );
 srand();
 my $domain = $c->get_servername;
 my $banner = '<';
-$banner .= ( 'a'..'z', 'A'..'Z' )[rand(52)] for 1..10;
-$banner .= "$$." . substr( $conn_start, 0, -2 ) . "\@$domain>";
+$banner .= ( 'a'..'z', 'A'..'Z', 0..9 )[rand(62)] for 1..16;
+$banner .= '.' . substr( $conn_start, 0, -2 ) . "\@$domain>";
 
 blog( $c->peerhost . " connected to $domain with " . $c->get_sslversion );
 ok( "little peepo is ready $banner" );
