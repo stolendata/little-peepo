@@ -164,6 +164,7 @@ while ( $c->connected )
     my $opt = length $p[2] ? ( $p[2] =~ tr/0-9//cdr || 0 ) : '';
 
     $buf = 'PASS *' if $cmd eq 'PASS';
+    $buf = "APOP $p[1] *" if ( $cmd eq 'APOP' and length $p[1] );
     blog( "DEBUG \"$buf\"" ) if DEBUG;
 
     $cmd_count++ if length $cmd;
