@@ -186,7 +186,7 @@ while ( $c->connected )
         {
             my $hash = '';
             if ( defined $peepos->{$domain}{$p[1]}
-                 and $peepos->{$domain}{$p[1]}[0] =~ /^apop:(.{15,})/ )
+                 and $peepos->{$domain}{$p[1]}[0] =~ /^apop:(.{20,})/ )
             {
                 $hash = md5_hex( $banner . $1 );
             }
@@ -207,7 +207,7 @@ while ( $c->connected )
             $account = $p[1];
             ok( 'go on' );
         }
-        elsif ( $cmd eq 'PASS' and length $p[1] >= 15 and length $account )
+        elsif ( $cmd eq 'PASS' and length $p[1] >= 20 and length $account )
         {
             my $hash = sha256_base64( $account . $p[1] );
             $hash .= '=' while ( length $hash ) % 4;
