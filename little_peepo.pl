@@ -38,8 +38,7 @@ use constant CERTS_FILE=>'./domains_certs.conf'; # and here be domain/cert map
 use constant MAILDIR=>'/var/mail/{U}'; # {U} expands to account's local user
 
 my ( $master, $peepos, $certs ) = ( $$, undef, undef );
-my ( $reload, $clients ) = ( 1, 0 );
-my ( $c, $sock4, $sock6 );
+my ( $reload, $clients, $c, $sock4, $sock6 ) = ( 1, 0, undef, undef, undef );
 
 $SIG{HUP} = sub { $reload = 1; };
 $SIG{CHLD} = sub { $clients-- while waitpid( -1, WNOHANG ) > 0; };
@@ -150,7 +149,6 @@ while ( $c->connected )
         blog( "dropped after sending $cmd_count commands" ) unless $@;
         blog( "timed out after sending $cmd_count commands" ) if $@;
         err( 'taking too long' ) if $@;
-
         last;
     }
 
