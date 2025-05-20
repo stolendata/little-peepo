@@ -237,10 +237,8 @@ while ( $c->connected )
             my $j = ( $uid // 0 ) ? chroot( $maildir ) : 0;
             $j = chdir( '/' ) if ( $j and $uid and $gid );
 
-            if ( $j )
-            {
-                do { $( = $gid; $) = $gid; $< = $uid; $> = $uid; } for 1..2;
-            }
+            $( = $gid, $) = $gid, $< = $uid, $> = $uid if $j;
+            $( = $gid, $) = $gid, $< = $uid, $> = $uid if $j;
 
             # jailing and/or privilege drop failed
             if ( $! or !$j or $> != $uid or ($) =~ /^(\d+)/)[0] != $gid )
