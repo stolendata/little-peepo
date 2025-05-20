@@ -136,7 +136,7 @@ while ( $c->connected )
     my $buf;
     eval
     {
-        local $SIG{ALRM} = sub { die "timed out\n" };
+        local $SIG{ALRM} = sub { die "timed out\n"; };
         alarm CLIENT_TIMEOUT_SEC;
         $buf = $c->readline;
         alarm 0;
