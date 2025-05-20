@@ -15,7 +15,6 @@
 use strict;
 use warnings;
 
-use Digest::MD5 'md5_base64';
 use Digest::SHA 'sha256_base64';
 use IO::Select;
 use IO::Socket::IP;
@@ -383,7 +382,7 @@ sub tally_maildrop
         next if ( $_ =~ /:2,[^T]*T[A-Z]*$/ or ! -f -r $_ or !(my $fs = -s _) );
 
         my ( $base ) = $_ =~/^\/...\/([^:]+)/;
-        my $uid = md5_base64( "$user $base" );
+        my $uid = substr( sha256_base64("$user $base"), 0, 16 );
 
         $maildrop->{count}++;
         $maildrop->{bytes} += $fs;
