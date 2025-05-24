@@ -73,9 +73,7 @@ PARENT: while ( 1 )
         blog( "serving $accounts accounts in $domains domains" );
     }
 
-    my @rdy = $sel->can_read;
-
-    for my $s ( @rdy )
+    for my $s ( $sel->can_read )
     {
         next unless ( $s == $sock4 or $s == $sock6 );
 
