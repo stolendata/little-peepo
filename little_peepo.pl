@@ -265,7 +265,6 @@ while ( $c->connected )
     }
     elsif ( $cmd eq 'LIST' or $cmd eq 'UIDL' )
     {
-        my $visible = $maildrop{count} - scalar @dele;
         my $field = $cmd eq 'LIST' ? 'bytes' : 'uid';
 
         if ( length $p[1] )
@@ -276,7 +275,7 @@ while ( $c->connected )
         }
         else
         {
-            ok( "$visible messages" );
+            ok( ($maildrop{count} - scalar @dele) . ' messages' );
             for ( 1..$maildrop{count} )
             {
                 next if defined $maildrop{dele}{$_};
