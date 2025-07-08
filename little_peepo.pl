@@ -35,6 +35,7 @@ use constant LISTEN_PORT6=>995;
 use constant ACCOUNTS_FILE=>'./peepos.conf'; # here be POP3 accounts/passwords
 use constant CERTS_FILE=>'./domains_certs.conf'; # and here be domain/cert map
 use constant MAILDIR=>'/var/mail/{U}'; # {U} expands to account's local user
+use constant LOG_FILE=>'/var/log/peepo.log';
 
 my ( $master, $peepos, $certs ) = ( $$, undef, undef );
 my ( $reload, $clients, $c, $sock4, $sock6 ) = ( 1, 0, undef, undef, undef );
@@ -53,17 +54,14 @@ for ( [LISTEN_IP4, LISTEN_PORT4, AF_INET, \$sock4, 'IPv4'],
                                       Listen=>MAX_CLIENTS, LocalAddr=>$_->[0],
                                       LocalPort=>$_->[1], Family=>$_->[2] );
 
-    if ( ${$_->[3]} )
-    {
-        $sel->add( ${$_->[3]} );
-        blog( "little peepo is accepting $_->[4] on port $_->[1]" );
-    }
+    $sel->add( ${$_->[3]} ) if ${$_->[3]};
 }
 
 PARENT: while ( 1 )
 {
     if ( $reload )
     {
+        open( STDOUT, '>>', LOG_FILE ) and *STDERR = *STDOUT, $| = 1;
         $reload = 0;
         $peepos = do ACCOUNTS_FILE;
         $certs = do CERTS_FILE;
@@ -71,6 +69,8 @@ PARENT: while ( 1 )
         $accounts += scalar keys %{$peepos->{$_}} for keys %$certs;
         die 'no domains/accounts configured' if ( !$domains or !$accounts );
         blog( "serving $accounts accounts in $domains domains" );
+        blog( 'little peepo accepts IPv4 on port ' . LISTEN_PORT4 ) if $sock4;
+        blog( 'little peepo accepts IPv6 on port ' . LISTEN_PORT6 ) if $sock6;
     }
 
     for my $s ( $sel->can_read )
