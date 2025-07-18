@@ -62,6 +62,7 @@ PARENT: while ( 1 )
     if ( $reload )
     {
         open( STDOUT, '>>', LOG_FILE ) and *STDERR = *STDOUT, $| = 1;
+        die 'failed to open listening socket' unless $sel->count;
         $reload = 0;
         $peepos = do ACCOUNTS_FILE;
         $certs = do CERTS_FILE;
