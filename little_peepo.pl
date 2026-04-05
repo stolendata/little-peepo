@@ -311,7 +311,7 @@ while ( $c->connected )
         {
             my $out;
             open( my $fh, '<:raw', $maildrop{msgs}{$num}{file} );
-            $ok = $c->print( $out ) while ( $ok and read($fh, $out, 8192) );
+            $ok = $c->print( $out ) while ( $ok and read($fh, $out, 16384) );
             $c->print( "\r\n.\r\n" );
             close( $fh );
 
