@@ -15,7 +15,7 @@
 use strict;
 use warnings;
 
-use Digest::SHA 'sha256_base64';
+use Digest::SHA 'sha256_base64', 'hmac_sha256_base64';
 use IO::Select;
 use IO::Socket::IP;
 use IO::Socket::SSL;
@@ -207,7 +207,7 @@ while ( $c->connected )
         }
         elsif ( $cmd eq 'PASS' and length $p[1] >= 20 and length $account )
         {
-            my $hash = sha256_base64( $account . $p[1] );
+            my $hash = hmac_sha256_base64( $account, $p[1] );
             $hash .= '=' while ( length $hash ) % 4;
 
             if ( defined $peepos->{$domain}{$account}
