@@ -15,7 +15,7 @@
 use strict;
 use warnings;
 
-use Digest::SHA 'sha256_base64', 'hmac_sha256_base64';
+use Digest::SHA 'hmac_sha256_base64';
 use IO::Select;
 use IO::Socket::IP;
 use IO::Socket::SSL;
@@ -380,7 +380,7 @@ sub tally_maildrop
         next if ( $_ =~ /:2,[^T]*T[A-Z]*$/ or ! -f -r $_ or !(my $fs = -s _) );
 
         my ( $base ) = $_ =~/^\/...\/([^:]+)/;
-        my $uid = substr( sha256_base64("$user $base"), 0, 16 );
+        my $uid = substr( hmac_sha256_base64("$user $fs", $base), 0, 16 );
 
         $maildrop->{count}++;
         $maildrop->{bytes} += $fs;
