@@ -15,6 +15,7 @@
 use strict;
 use warnings;
 
+use Digest::MD5 'md5_hex';
 use Digest::SHA 'hmac_sha256_base64';
 use IO::Select;
 use IO::Socket::IP;
