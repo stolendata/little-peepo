@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# little peepo v0.4 - https://github.com/stolendata/little-peepo
+# little peepo v0.5 - https://github.com/stolendata/little-peepo
 #
 # (c) 2009 robin leffmann <djinn at stolendata dot net>
 #
@@ -22,21 +22,8 @@ use IO::Socket::IP;
 use IO::Socket::SSL;
 use POSIX ':sys_wait_h';
 
-use constant DEBUG=>1;
-use constant MAX_CLIENTS=>20;
-use constant AUTH_GRACE_SEC=>5;
-use constant CLIENT_TIMEOUT_SEC=>10;
-use constant ERRS_BEFORE_KICK=>10;
-use constant EMPTY_TRASH=>1;
-use constant SSL_TLS_VERSIONS=>'TLSv13';
-use constant LISTEN_IP4=>'0.0.0.0';
-use constant LISTEN_PORT4=>995;
-use constant LISTEN_IP6=>'::';
-use constant LISTEN_PORT6=>995;
-use constant ACCOUNTS_FILE=>'./peepos.conf'; # here be POP3 accounts/passwords
-use constant CERTS_FILE=>'./domains_certs.conf'; # and here be domain/cert map
-use constant MAILDIR=>'/var/mail/{U}'; # {U} expands to account's local user
-use constant LOG_FILE=>'/var/log/peepo.log';
+use lib '/etc/little_peepo';
+use peepo_config;
 
 my ( $master, $peepos, $certs ) = ( $$, undef, undef );
 my ( $reload, $clients, $c, $sock4, $sock6 ) = ( 1, 0, undef, undef, undef );
