@@ -162,7 +162,7 @@ while ( $c->connected )
     elsif ( $cmd eq 'CAPA' )
     {
         ok( 'little peepo spellbook' );
-        $c->print( "$_\r\n" ) for ( 'IMPLEMENTATION little-peepo-v0.4',
+        $c->print( "$_\r\n" ) for ( 'IMPLEMENTATION little-peepo-v0.5',
                                     'LOGIN-DELAY 120', 'EXPIRE 0',
                                     'USER', 'UIDL', 'TOP', '.' );
     }
